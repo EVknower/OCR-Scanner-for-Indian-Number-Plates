@@ -15,29 +15,12 @@ def get_ocr():
 
 
 def preprocess_variants(image):
-    """Return multiple preprocessed versions to try."""
+    """Single best-performing preprocessing: CLAHE + 2x upscale."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
-    # Upscale
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-
-    variants = []
-
-    # 1. CLAHE enhanced (better for dark/uneven lighting)
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-    clahe_img = clahe.apply(gray)
-    variants.append(cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR))
-
-    # 2. Adaptive threshold (works in bad light)
-    adaptive = cv2.adaptiveThreshold(
-        clahe_img, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2
-    )
-    variants.append(cv2.cvtColor(adaptive, cv2.COLOR_GRAY2BGR))
-
-    # 3. Plain grayscale upscaled (sometimes simpler is better)
-    variants.append(cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR))
-
-    return variants
+    enhanced = clahe.apply(gray)
+    return [cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)]
 
 
 def read_plate(image):
@@ -59,9 +42,16 @@ def read_plate(image):
             if not result or not result[0]:
                 continue
 
+            # Sort detections top-to-bottom by Y coordinate of their bounding box
+            # This ensures two-row plates (bike plates) are read in correct order
+            detections = sorted(
+                result[0],
+                key=lambda line: min(pt[1] for pt in line[0])  # min Y of bounding box
+            )
+
             texts = []
             confs = []
-            for line in result[0]:
+            for line in detections:
                 text = line[1][0].replace(" ", "").upper()
                 conf = line[1][1]
                 print(f"[OCR] Raw read: '{text}' conf={conf:.2f}")
@@ -69,12 +59,22 @@ def read_plate(image):
                     texts.append(text)
                     confs.append(conf)
 
-            if texts:
-                combined = "".join(texts)
-                avg_conf = float(np.mean(confs))
-                if avg_conf > best_conf:
-                    best_text = combined
-                    best_conf = avg_conf
+            if not texts:
+                continue
+
+            avg_conf = float(np.mean(confs))
+
+            # Strategy 1: try each individual text line (single-row plates)
+            for t, c in zip(texts, confs):
+                if c > best_conf:
+                    best_text = t
+                    best_conf = c
+
+            # Strategy 2: concatenate all lines top-to-bottom (two-row plates)
+            combined = "".join(texts)
+            if avg_conf > best_conf:
+                best_text = combined
+                best_conf = avg_conf
 
     return best_text, best_conf
 

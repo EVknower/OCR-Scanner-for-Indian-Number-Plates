@@ -25,6 +25,7 @@ with tab1:
         plate_placeholder = st.empty()
         conf_placeholder = st.empty()
         count_placeholder = st.empty()
+        status_placeholder = st.empty()
 
     if run:
         import sys
@@ -36,6 +37,9 @@ with tab1:
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
         frame_count = 0
+        last_plate = None
+        last_conf  = None
+
         while run:
             ret, frame = cap.read()
             if not ret:
@@ -43,15 +47,31 @@ with tab1:
                 break
             frame = cv2.flip(frame, 1)
             frame_count += 1
-            annotated, detections = pipeline.process_frame(frame, frame_count)
+
+            # process_frame never blocks — OCR runs in background thread
+            annotated = pipeline.process_frame(frame, frame_count)
             rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
             frame_placeholder.image(rgb, width="stretch")
-            if detections:
-                last = detections[-1]
-                plate_placeholder.metric("Plate", last["plate"])
-                conf_placeholder.metric("Confidence", f"{last['confidence']*100:.1f}%")
+
+            # Collect results from the background OCR thread
+            for det in pipeline.flush_detections():
+                last_plate = det["plate"]
+                last_conf  = det["confidence"]
+
+            if last_plate:
+                plate_placeholder.metric("Plate", last_plate)
+                conf_placeholder.metric("Confidence", f"{last_conf*100:.1f}%")
+
             today = db.fetch_today()
             count_placeholder.metric("Vehicles Today", len(today))
+
+            # Show OCR queue status
+            qsize = pipeline._ocr_queue.qsize()
+            if qsize > 0:
+                status_placeholder.info(f"\U0001f50d Scanning... ({qsize} batch{'es' if qsize > 1 else ''} in queue)")
+            else:
+                status_placeholder.empty()
+
         cap.release()
 
 with tab2:

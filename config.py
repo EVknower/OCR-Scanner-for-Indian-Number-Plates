@@ -16,10 +16,10 @@ TOP_FRAMES = 2
 
 OCR_CONF_THRESHOLD = 0.34
 
-PLATE_REGEX = r'[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}'
+PLATE_REGEX = r'[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{3,4}[A-Z]?'
 
 DB_PATH = "database/vehicles.db"
 SNAPSHOT_DIR = "snapshots"
 EXPORT_DIR = "exports"
 
-COOLDOWN_SECONDS = 300
+COOLDOWN_SECONDS = 60
