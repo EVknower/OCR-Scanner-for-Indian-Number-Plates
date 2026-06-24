@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# YOLO / ML models (large binary files — auto-downloaded at runtime)
+models/*.pt
+models/*.onnx
+
+# PaddleOCR cache (downloaded at first run)
+~/.paddleocr/
+.paddleocr/
+
+# Database (runtime data)
+database/*.db
+
+# Exports (runtime data)
+exports/
+
+# Snapshots (runtime data)
+snapshots/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp / debug scripts
+debug_detect.py
+
+# Antigravity IDE
+.agents/
