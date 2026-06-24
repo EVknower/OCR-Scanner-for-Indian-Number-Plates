@@ -18,8 +18,8 @@ A virtual environment keeps all packages isolated and prevents global conflicts.
 
 **VS Code / Terminal (Windows):**
 ```powershell
-python -m venv venv
-.\venv\Scripts\activate
+python -m venv .venv
+.\.venv\Scripts\activate
 ```
 
 **VS Code / Terminal (macOS/Linux):**
@@ -46,7 +46,7 @@ source venv/bin/activate
 
 #### Antigravity IDE
 1. Open the integrated terminal
-2. Run `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (macOS/Linux)
+2. Run `.\.venv\Scripts\activate` (Windows) or `source .venv/bin/activate` (macOS/Linux)
 3. Run `streamlit run dashboard.py` to start the web app, or `python main.py` for the OpenCV window
 4. *(Optional)* You can also just ask the AI agent: *"Run the Streamlit dashboard"* and it will execute it for you!
 
