@@ -16,63 +16,75 @@
 
 A virtual environment keeps all packages isolated and prevents global conflicts.
 
-**VS Code / Terminal (Windows):**
+**Windows (PowerShell):**
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 ```
 
-**VS Code / Terminal (macOS/Linux):**
+**macOS/Linux:**
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-> ✅ You'll know it's active when you see `(venv)` at the start of your terminal prompt.
+> ✅ You'll know it's active when you see `(.venv)` at the start of your terminal prompt.
 
 ---
 
-### Step 2 — Select the Virtual Environment in Your IDE
+### Step 2 — Install Dependencies
 
-#### VS Code
-1. Press `Ctrl + Shift + P` → type **"Python: Select Interpreter"**
-2. Choose the one that says `.\venv\Scripts\python.exe` (Windows) or `./venv/bin/python` (macOS/Linux)
-3. Open a **New Terminal** in VS Code — it will automatically activate the venv
-
-#### PyCharm
-1. Go to **File → Settings → Project → Python Interpreter**
-2. Click the gear icon → **Add Interpreter → Add Local Interpreter**
-3. Select **Existing environment** and point to `venv/Scripts/python.exe`
-
-#### Antigravity IDE
-1. Open the integrated terminal
-2. Run `.\.venv\Scripts\activate` (Windows) or `source .venv/bin/activate` (macOS/Linux)
-3. Run `streamlit run dashboard.py` to start the web app, or `python main.py` for the OpenCV window
-4. *(Optional)* You can also just ask the AI agent: *"Run the Streamlit dashboard"* and it will execute it for you!
-
-#### Any Other IDE
-- Just make sure the terminal is using the venv Python, not the system Python
-- Run `python --version` and check the path matches your `venv/` folder
-
----
-
-### Step 3 — Install Dependencies
+> ⚠️ **Important:** Install packages in this exact order to avoid version conflicts.
 
 ```bash
-pip install -r requirements.txt
-```
+# 1. Install PyTorch (CPU only)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-> ⚠️ **Do not install globally.** Always activate the venv first (Step 1) before running this.
+# 2. Install PaddleOCR and PaddlePaddle (pinned to stable versions)
+pip install paddlepaddle==2.6.2 paddleocr==2.7.3 "albumentations<2.0"
+
+# 3. Install remaining dependencies
+pip install ultralytics streamlit opencv-python pandas
+
+# 4. Fix numpy (required for imgaug compatibility)
+pip install numpy==1.26.4 --force-reinstall --no-deps
+```
 
 ---
 
-### Step 4 — Download the YOLO Model
+### Step 3 — Download the YOLO Model
 
 ```bash
 python download_model.py
 ```
 
 This downloads the pretrained license plate detection model (~6 MB) into the `models/` folder. Only needed once.
+
+---
+
+### Step 4 — Select the Virtual Environment in Your IDE
+
+#### Antigravity IDE
+1. Open the integrated terminal (`` Ctrl + ` ``)
+2. Navigate to the project folder: `cd ANPR-System\ANPR-System`
+3. Activate the venv: `.\.venv\Scripts\activate`
+4. Run the app: `streamlit run dashboard.py`
+5. Open `http://localhost:8501` in your browser
+6. *(Shortcut)* You can also just ask the AI agent: *"Run the Streamlit dashboard"* and it handles everything for you!
+
+#### VS Code
+1. Press `Ctrl + Shift + P` → type **"Python: Select Interpreter"**
+2. Choose `.\.venv\Scripts\python.exe` (Windows) or `./.venv/bin/python` (macOS/Linux)
+3. Open a **New Terminal** — it will automatically activate the venv
+
+#### PyCharm
+1. Go to **File → Settings → Project → Python Interpreter**
+2. Click the gear icon → **Add Interpreter → Add Local Interpreter**
+3. Select **Existing environment** and point to `.venv/Scripts/python.exe`
+
+#### Any Other IDE
+- Make sure the terminal is using the `.venv` Python, not the system Python
+- Run `python --version` and verify the path matches your `.venv/` folder
 
 ---
 
@@ -114,8 +126,8 @@ CAMERA_SOURCE = r"C:\Videos\test.mp4"                        # Pre-recorded vide
 | `CAMERA_SOURCE` | `0` | Webcam index or RTSP/HTTP URL |
 | `PROCESS_EVERY_N_FRAMES` | `2` | Skip frames for speed |
 | `FRAMES_TO_COLLECT` | `3` | Frames per track before OCR runs |
-| `COOLDOWN_SECONDS` | `60` | Seconds before the same plate can be re-logged |
-| `YOLO_CONF_THRESHOLD` | `0.3` | Min YOLO detection confidence (0–1) |
+| `COOLDOWN_SECONDS` | `20` | Seconds before the same plate can be re-logged |
+| `YOLO_CONF_THRESHOLD` | `0.15` | Min YOLO detection confidence (0–1) |
 | `OCR_CONF_THRESHOLD` | `0.34` | Min OCR character confidence (0–1) |
 | `SHARPNESS_THRESHOLD` | `20.0` | Min sharpness score to accept a frame |
 
@@ -150,11 +162,13 @@ ANPR-System/
 
 | Issue | Fix |
 |---|---|
-| `ModuleNotFoundError` | venv not activated — run `.\venv\Scripts\activate` first |
+| `ModuleNotFoundError` | venv not activated — run `.\.venv\Scripts\activate` first |
+| `shm.dll` error (Windows) | Run: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu` |
+| `np.sctypes` error | Run: `pip install numpy==1.26.4 --force-reinstall --no-deps` |
+| `oneDNN` / `pir::ArrayAttribute` crash | You have PaddleOCR v3.x installed — downgrade: `pip install paddlepaddle==2.6.2 paddleocr==2.7.3` |
 | Camera feed freezes | Another app is using the camera — close it and restart |
 | No detections / green box only | Low lighting — improve brightness, OCR still runs in background |
 | Wrong plate on display | Old result shown — wait for current OCR batch to finish (watch "🔍 Scanning…") |
-| `shm.dll` error (Windows) | Broken PyTorch — run: `pip uninstall torch torchvision ; pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu` |
 | Camera index not working | Try `CAMERA_SOURCE = 1` or `2` in `config.py` |
 
 ---

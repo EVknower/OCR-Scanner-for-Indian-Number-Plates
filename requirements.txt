@@ -1,9 +1,16 @@
-ultralytics>=8.0.0
-paddlepaddle
-paddleocr
-opencv-python
-numpy
-pandas
-openpyxl
-streamlit
-Pillow
+# Core ML
+ultralytics>=8.0
+paddlepaddle==2.6.2
+paddleocr==2.7.3
+albumentations<2.0
+
+# Torch (CPU only - needed by YOLO/ultralytics)
+torch>=2.0
+torchvision>=0.15
+
+# Dashboard
+streamlit>=1.30
+opencv-python>=4.8
+
+# Database & Export
+pandas>=2.0
